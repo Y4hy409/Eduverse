@@ -46,7 +46,8 @@ function routeTo(path) {
 function ensureRole(role) {
 	const user = getUser();
 	if (!user || user.role !== role) {
-		window.location.replace('../pages/login.html');
+		// Use root-absolute path to avoid relative path issues
+		window.location.replace('/pages/login.html');
 	}
 	return user;
 }

@@ -4,7 +4,7 @@
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>EduVerse – Student Classroom Management</title>
-	<link rel="stylesheet" href="./css/styles.css" />
+	<link rel="stylesheet" href="/css/styles.css" />
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,11 +12,11 @@
 <body class="landing">
 	<header class="site-header">
 		<div class="brand">
-			<img src="./assets/logo.svg" alt="EduVerse" class="logo" />
+			<img src="/assets/logo.svg" alt="EduVerse" class="logo" />
 			<h1>EduVerse</h1>
 		</div>
 		<nav>
-			<a class="btn primary" href="#" id="goLogin">Get Started</a>
+			<a class="btn primary" href="/pages/login.html" id="goLogin">Get Started</a>
 		</nav>
 	</header>
 
@@ -25,8 +25,8 @@
 			<h2 class="headline">Student Classroom Management System</h2>
 			<p class="subhead">A clean, modern prototype for Admins, Teachers, and Students. Explore dashboards, manage courses, and visualize performance — all with mock data.</p>
 			<div class="cta-row">
-				<a class="btn primary lg" href="#" id="ctaLogin">Continue to Login</a>
-				<a class="btn ghost" href="#" id="ctaAdmin">Quick Preview: Admin</a>
+				<a class="btn primary lg" href="/pages/login.html" id="ctaLogin">Continue to Login</a>
+				<a class="btn ghost" href="/pages/admin-dashboard.html" id="ctaAdmin">Quick Preview: Admin</a>
 			</div>
 		</section>
 	</main>
@@ -35,17 +35,17 @@
 		<p>© <span id="year"></span> EduVerse. Prototype UI only.</p>
 	</footer>
 
-	<script src="./js/data.js"></script>
-	<script src="./js/main.js"></script>
+	<script src="/js/data.js"></script>
+	<script src="/js/main.js"></script>
 	<script>
 		// Initialize landing behaviors
 		document.getElementById('year').textContent = new Date().getFullYear();
 
 		// Force reliable navigation using JS to avoid environments that preview raw code
-		function toLogin(){ EduVerse.routeTo('pages/login.html'); }
+		function toLogin(){ EduVerse.routeTo('/pages/login.html'); }
 		document.getElementById('goLogin').addEventListener('click', (e)=>{ e.preventDefault(); toLogin(); });
 		document.getElementById('ctaLogin').addEventListener('click', (e)=>{ e.preventDefault(); toLogin(); });
-		document.getElementById('ctaAdmin').addEventListener('click', (e)=>{ e.preventDefault(); EduVerse.setUser({ id: 0, role: 'Admin', name: 'Administrator' }); EduVerse.routeTo('pages/admin-dashboard.html'); });
+		document.getElementById('ctaAdmin').addEventListener('click', (e)=>{ e.preventDefault(); EduVerse.setUser({ id: 0, role: 'Admin', name: 'Administrator' }); EduVerse.routeTo('/pages/admin-dashboard.html'); });
 	</script>
 </body>
 </html>
