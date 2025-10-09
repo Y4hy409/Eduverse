@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>EduVerse – Login</title>
+	<link rel="stylesheet" href="../css/styles.css" />
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+	<header class="site-header">
+		<div class="brand">
+			<img src="../assets/logo.svg" class="logo" alt="EduVerse" />
+			<h1>EduVerse</h1>
+		</div>
+	</header>
+
+	<main class="container" style="padding: 32px 0;">
+		<section class="card elevate" style="max-width: 640px; margin: 0 auto;">
+			<h2 class="page-title">Login</h2>
+			<p class="page-subtitle">Choose a role and a mock user to continue.</p>
+
+			<form class="form" id="loginForm">
+				<div class="field">
+					<label for="role">Role</label>
+					<select id="role" required>
+						<option value="">Select role</option>
+						<option>Student</option>
+						<option>Teacher</option>
+						<option>Admin</option>
+					</select>
+				</div>
+
+				<div class="field" id="userPicker" style="display:none;">
+					<label for="user">User</label>
+					<select id="user"></select>
+				</div>
+
+				<div class="nav">
+					<button type="submit" class="btn primary">Continue</button>
+					<a href="../index.html" class="btn">Back</a>
+				</div>
+			</form>
+		</section>
+	</main>
+
+	<script src="../js/data.js"></script>
+	<script src="../js/main.js"></script>
+	<script>
+		const roleEl = document.getElementById('role');
+		const userPicker = document.getElementById('userPicker');
+		const userEl = document.getElementById('user');
+
+		roleEl.addEventListener('change', () => {
+			const role = roleEl.value;
+			userEl.innerHTML = '';
+			if (!role) { userPicker.style.display = 'none'; return; }
+			userPicker.style.display = 'grid';
+			let options = [];
+			if (role === 'Student') {
+				options = EduData.students.map(s => ({ id: s.id, name: s.name }));
+			} else if (role === 'Teacher') {
+				options = EduData.teachers.map(t => ({ id: t.id, name: t.name }));
+			} else {
+				options = [{ id: 0, name: 'Administrator' }];
+			}
+			for (const o of options) {
+				const opt = document.createElement('option');
+				opt.value = o.id;
+				opt.textContent = o.name;
+				userEl.appendChild(opt);
+			}
+		});
+
+		document.getElementById('loginForm').addEventListener('submit', (e) => {
+			e.preventDefault();
+			const role = roleEl.value;
+			const id = Number(userEl.value || 0);
+			if (!role) { EduVerse.showToast('Please select a role', 'warn'); return; }
+			let name = 'Administrator';
+			if (role === 'Student') name = (EduData.students.find(s => s.id === id) || {}).name || 'Student';
+			if (role === 'Teacher') name = (EduData.teachers.find(t => t.id === id) || {}).name || 'Teacher';
+			EduVerse.setUser({ id, role, name });
+			if (role === 'Student') EduVerse.routeTo('./student-dashboard.html');
+			if (role === 'Teacher') EduVerse.routeTo('./teacher-dashboard.html');
+			if (role === 'Admin') EduVerse.routeTo('./admin-dashboard.html');
+		});
+	</script>
+</body>
+</html>
+

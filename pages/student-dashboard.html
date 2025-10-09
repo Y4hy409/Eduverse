@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>EduVerse – Student Dashboard</title>
+	<link rel="stylesheet" href="../css/styles.css" />
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+	<div class="layout">
+		<aside class="sidebar">
+			<div class="brand" style="margin: 6px 6px 12px;">
+				<img src="../assets/logo.svg" class="logo" alt="EduVerse" />
+				<h1>EduVerse</h1>
+			</div>
+			<h3>Student</h3>
+			<nav class="menu">
+				<a class="active" href="#">Dashboard</a>
+				<a href="./courses.html">Enroll in Course</a>
+				<a href="./materials.html">Course Materials</a>
+				<a href="./attendance.html">Performance & Attendance</a>
+				<a href="./login.html">Logout</a>
+			</nav>
+		</aside>
+		<main class="content">
+			<h2 class="page-title">Welcome, <span id="studentName"></span></h2>
+			<p class="page-subtitle">Track your courses and progress.</p>
+
+			<section class="stat-cards">
+				<div class="stat-card">
+					<p class="stat-title">Enrolled Courses</p>
+					<p class="stat-value" id="enrolledCount">0</p>
+				</div>
+				<div class="stat-card">
+					<p class="stat-title">Avg Attendance</p>
+					<canvas id="attChart" height="120"></canvas>
+				</div>
+				<div class="stat-card">
+					<p class="stat-title">Latest Grade</p>
+					<p class="stat-value" id="latestGrade">-</p>
+				</div>
+			</section>
+
+			<section class="card" style="margin-top:16px;">
+				<h3 style="margin-top:0;">Your Courses</h3>
+				<table>
+					<thead>
+						<tr><th>Code</th><th>Title</th><th>Teacher</th></tr>
+					</thead>
+					<tbody id="courseRows"></tbody>
+				</table>
+			</section>
+		</main>
+	</div>
+
+	<script src="../js/data.js"></script>
+	<script src="../js/main.js"></script>
+	<script src="../js/charts.js"></script>
+	<script>
+		const user = EduVerse.ensureRole('Student');
+		document.getElementById('studentName').textContent = user.name;
+		const enrollments = EduData.listStudentEnrollments(user.id);
+		document.getElementById('enrolledCount').textContent = enrollments.size;
+
+		const me = EduData.students.find(s => s.id === user.id) || EduData.students[0];
+		EduCharts.renderAttendanceChart(document.getElementById('attChart'), me.attendance || 88);
+		document.getElementById('latestGrade').textContent = me.grade || 'A';
+
+		const tbody = document.getElementById('courseRows');
+		const myCourses = EduData.courses.filter(c => enrollments.has(c.id));
+		if (myCourses.length === 0) {
+			const tr = document.createElement('tr');
+			const td = document.createElement('td'); td.colSpan = 3; td.textContent = 'No enrollments yet. Go to Enroll in Course.';
+			tr.appendChild(td); tbody.appendChild(tr);
+		} else {
+			for (const c of myCourses) {
+				const tr = document.createElement('tr');
+				tr.innerHTML = `<td>${c.code}</td><td>${c.title}</td><td>${(EduData.findTeacherById(c.teacherId)||{}).name||'-'}</td>`;
+				tbody.appendChild(tr);
+			}
+		}
+	</script>
+</body>
+</html>
+

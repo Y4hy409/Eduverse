@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>EduVerse – Attendance & Performance</title>
+	<link rel="stylesheet" href="../css/styles.css" />
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+	<div class="layout">
+		<aside class="sidebar">
+			<div class="brand" style="margin: 6px 6px 12px;">
+				<img src="../assets/logo.svg" class="logo" alt="EduVerse" />
+				<h1>EduVerse</h1>
+			</div>
+			<h3 id="roleTitle">Attendance</h3>
+			<nav class="menu" id="roleMenu"></nav>
+		</aside>
+		<main class="content">
+			<h2 class="page-title" id="pageTitle">Attendance</h2>
+			<p class="page-subtitle" id="pageSubtitle"></p>
+
+			<section class="grid cols-2">
+				<div class="card" id="studentView" style="display:none;">
+					<h3 style="margin-top:0;">Your Performance</h3>
+					<canvas id="gradesChart" height="180"></canvas>
+				</div>
+				<div class="card" id="teacherView" style="display:none;">
+					<h3 style="margin-top:0;">Mark Attendance (Simulated)</h3>
+					<table>
+						<thead><tr><th>Student</th><th>Present</th></tr></thead>
+						<tbody id="attTable"></tbody>
+					</table>
+					<div class="nav" style="margin-top:10px;"><button class="btn primary" id="saveAtt">Save</button></div>
+				</div>
+			</section>
+
+			<section class="card" id="adminView" style="display:none; margin-top:16px;">
+				<h3 style="margin-top:0;">Class Schedule</h3>
+				<table>
+					<thead><tr><th>Course</th><th>Day</th><th>Time</th><th>Room</th></tr></thead>
+					<tbody id="schedTable"></tbody>
+				</table>
+			</section>
+		</main>
+	</div>
+
+	<script src="../js/data.js"></script>
+	<script src="../js/main.js"></script>
+	<script src="../js/charts.js"></script>
+	<script>
+		const user = EduVerse.getUser();
+		const role = (user && user.role) || 'Student';
+		document.getElementById('roleTitle').textContent = role;
+		const roleMenu = document.getElementById('roleMenu');
+
+		function buildMenu(){
+			const m = [];
+			if(role==='Student'){
+				m.push(['./student-dashboard.html','Dashboard']);
+				m.push(['./courses.html','Enroll in Course']);
+				m.push(['./materials.html','Course Materials']);
+				m.push(['./attendance.html','Performance & Attendance']);
+			}else if(role==='Teacher'){
+				m.push(['./teacher-dashboard.html','Dashboard']);
+				m.push(['./materials.html','Upload Materials']);
+				m.push(['./attendance.html','Mark Attendance']);
+				m.push(['./courses.html','Track Performance']);
+			}else{
+				m.push(['./admin-dashboard.html','Dashboard']);
+				m.push(['./courses.html','Courses']);
+				m.push(['./materials.html','Reports']);
+				m.push(['./attendance.html','Schedule']);
+			}
+			roleMenu.innerHTML = '';
+			for(const [href,label] of m){
+				const a = document.createElement('a'); a.href = href; a.textContent = label; if(label.includes('Attendance')||label==='Schedule') a.classList.add('active'); roleMenu.appendChild(a);
+			}
+		}
+
+		function initStudent(){
+			if(role!=='Student') return;
+			document.getElementById('studentView').style.display='block';
+			document.getElementById('pageTitle').textContent = 'Performance & Attendance';
+			document.getElementById('pageSubtitle').textContent = 'Visualize your performance trends.';
+			const me = EduData.students.find(s=>s.id===user.id) || EduData.students[0];
+			const items = [
+				{ label: 'DBMS', value: 9 },
+				{ label: 'DAA', value: 8 },
+				{ label: 'OOP', value: 9 },
+				{ label: 'DM', value: 8 },
+			];
+			EduCharts.renderGradesChart(document.getElementById('gradesChart'), items);
+		}
+
+		function initTeacher(){
+			if(role!=='Teacher') return;
+			document.getElementById('teacherView').style.display='block';
+			document.getElementById('pageTitle').textContent = 'Mark Attendance';
+			document.getElementById('pageSubtitle').textContent = 'Toggle present/absent and save (simulation).';
+			const tbody = document.getElementById('attTable');
+			for(const s of EduData.students){
+				const tr = document.createElement('tr');
+				const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = s.attendance >= 90;
+				const td1 = document.createElement('td'); td1.textContent = s.name; const td2 = document.createElement('td'); td2.appendChild(cb);
+				tr.appendChild(td1); tr.appendChild(td2); tbody.appendChild(tr);
+			}
+			document.getElementById('saveAtt').onclick = () => EduVerse.showToast('Attendance saved (simulated)', 'success');
+		}
+
+		function initAdmin(){
+			if(role!=='Admin') return;
+			document.getElementById('adminView').style.display='block';
+			document.getElementById('pageTitle').textContent = 'Class Schedule';
+			document.getElementById('pageSubtitle').textContent = 'Static schedule preview.';
+			const tbody = document.getElementById('schedTable');
+			for(const s of EduData.schedule){
+				const c = EduData.courses.find(c=>c.id===s.courseId);
+				const tr = document.createElement('tr');
+				tr.innerHTML = `<td>${c?c.code:'-'}</td><td>${s.day}</td><td>${s.time}</td><td>${s.room}</td>`;
+				tbody.appendChild(tr);
+			}
+		}
+
+		buildMenu();
+		initStudent();
+		initTeacher();
+		initAdmin();
+	</script>
+</body>
+</html>
+

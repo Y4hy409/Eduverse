@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>EduVerse – Courses</title>
+	<link rel="stylesheet" href="../css/styles.css" />
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+	<div class="layout">
+		<aside class="sidebar">
+			<div class="brand" style="margin: 6px 6px 12px;">
+				<img src="../assets/logo.svg" class="logo" alt="EduVerse" />
+				<h1>EduVerse</h1>
+			</div>
+			<h3 id="roleTitle">Courses</h3>
+			<nav class="menu" id="roleMenu"></nav>
+		</aside>
+		<main class="content">
+			<h2 class="page-title">Courses</h2>
+			<p class="page-subtitle">Browse, enroll, or manage courses based on your role.</p>
+
+			<section class="card">
+				<table>
+					<thead><tr><th>Code</th><th>Title</th><th>Teacher</th><th>Action</th></tr></thead>
+					<tbody id="courseTable"></tbody>
+				</table>
+			</section>
+
+			<!-- Admin: Manage Students / Teachers -->
+			<section class="grid cols-2" id="adminMgmt" style="margin-top:16px; display:none;">
+				<div class="card">
+					<h3 style="margin-top:0;">Manage Students</h3>
+					<div class="nav" style="margin: 6px 0 10px;">
+						<button class="btn primary" id="addStudentBtn">Add Student</button>
+					</div>
+					<table>
+						<thead><tr><th>Name</th><th>Class</th><th>Attendance</th><th>Grade</th><th>Actions</th></tr></thead>
+						<tbody id="studentsTable"></tbody>
+					</table>
+				</div>
+				<div class="card">
+					<h3 style="margin-top:0;">Manage Teachers</h3>
+					<div class="nav" style="margin: 6px 0 10px;">
+						<button class="btn primary" id="addTeacherBtn">Add Teacher</button>
+					</div>
+					<table>
+						<thead><tr><th>Name</th><th>Department</th><th>Subject</th><th>Actions</th></tr></thead>
+						<tbody id="teachersTable"></tbody>
+					</table>
+				</div>
+			</section>
+
+			<!-- Teacher: Performance Tracker -->
+			<section class="card" id="teacherPerf" style="margin-top:16px; display:none;">
+				<h3 style="margin-top:0;">Track Student Performance (Simulated)</h3>
+				<table>
+					<thead><tr><th>Student</th><th>Course</th><th>Grade</th></tr></thead>
+					<tbody id="perfTable"></tbody>
+				</table>
+				<div class="nav" style="margin-top:10px;"><button class="btn primary" id="savePerf">Save</button></div>
+			</section>
+		</main>
+	</div>
+
+	<script src="../js/data.js"></script>
+	<script src="../js/main.js"></script>
+	<script>
+		const user = EduVerse.getUser();
+		const roleMenu = document.getElementById('roleMenu');
+		const roleTitle = document.getElementById('roleTitle');
+		const tableBody = document.getElementById('courseTable');
+
+		function buildMenu(role){
+			const m = [];
+			if(role==='Student'){
+				m.push(['./student-dashboard.html','Dashboard']);
+				m.push(['./courses.html','Enroll in Course']);
+				m.push(['./materials.html','Course Materials']);
+				m.push(['./attendance.html','Performance & Attendance']);
+			}else if(role==='Teacher'){
+				m.push(['./teacher-dashboard.html','Dashboard']);
+				m.push(['./materials.html','Upload Materials']);
+				m.push(['./attendance.html','Mark Attendance']);
+				m.push(['./courses.html','Track Performance']);
+			}else{
+				m.push(['./admin-dashboard.html','Dashboard']);
+				m.push(['./courses.html','Courses']);
+				m.push(['./materials.html','Reports']);
+				m.push(['./attendance.html','Schedule']);
+			}
+			roleMenu.innerHTML = '';
+			for(const [href,label] of m){
+				const a = document.createElement('a'); a.href = href; a.textContent = label; if(label.includes('Course')) a.classList.add('active'); roleMenu.appendChild(a);
+			}
+		}
+
+		function renderCoursesForRole(role){
+			tableBody.innerHTML = '';
+			const enrollments = user && user.role==='Student' ? EduData.listStudentEnrollments(user.id) : new Set();
+			for(const c of EduData.courses){
+				const tr = document.createElement('tr');
+				const t = EduData.findTeacherById(c.teacherId);
+				const actionCell = document.createElement('td');
+				if(role==='Student'){
+					const enrolled = enrollments.has(c.id);
+					const btn = document.createElement('button');
+					btn.className = 'btn ' + (enrolled ? '' : 'primary');
+					btn.textContent = enrolled ? 'Unenroll' : 'Enroll';
+					btn.onclick = () => {
+						EduData.toggleEnrollment(user.id, c.id);
+						EduVerse.showToast(enrolled ? 'Unenrolled' : 'Enrolled', 'success');
+						renderCoursesForRole(role);
+					};
+					actionCell.appendChild(btn);
+				}else if(role==='Admin'){
+					const assign = document.createElement('select');
+					for(const teacher of EduData.teachers){
+						const opt = document.createElement('option'); opt.value = teacher.id; opt.textContent = teacher.name; if(teacher.id===c.teacherId) opt.selected=true; assign.appendChild(opt);
+					}
+					assign.onchange = () => { c.teacherId = Number(assign.value); EduVerse.showToast('Assigned (simulated)', 'info'); renderCoursesForRole(role); };
+					actionCell.appendChild(assign);
+				}else{
+					actionCell.textContent = '-';
+				}
+				tr.innerHTML = `<td>${c.code}</td><td>${c.title}</td><td>${t?t.name:'-'}</td>`;
+				tr.appendChild(actionCell);
+				tableBody.appendChild(tr);
+			}
+		}
+
+		// Admin management (simulated add/edit/delete using in-memory arrays)
+		function initAdminMgmt(){
+			const wrap = document.getElementById('adminMgmt');
+			if((user && user.role)!=='Admin'){ wrap.style.display='none'; return; }
+			wrap.style.display='grid';
+			const sBody = document.getElementById('studentsTable');
+			const tBody = document.getElementById('teachersTable');
+
+			function renderStudents(){
+				sBody.innerHTML = '';
+				for(const s of EduData.students){
+					const tr = document.createElement('tr');
+					tr.innerHTML = `<td contenteditable="true">${s.name}</td><td contenteditable="true">${s.class}</td><td contenteditable="true">${s.attendance}</td><td contenteditable="true">${s.grade}</td>`;
+					const actions = document.createElement('td');
+					const del = document.createElement('button'); del.className='btn'; del.textContent='Delete'; del.onclick=()=>{ const i = EduData.students.indexOf(s); if(i>-1){ EduData.students.splice(i,1); renderStudents(); EduVerse.showToast('Deleted (simulated)','danger'); } };
+					actions.appendChild(del); tr.appendChild(actions); sBody.appendChild(tr);
+				}
+			}
+			function renderTeachers(){
+				tBody.innerHTML = '';
+				for(const t of EduData.teachers){
+					const tr = document.createElement('tr');
+					tr.innerHTML = `<td contenteditable="true">${t.name}</td><td contenteditable="true">${t.department}</td><td contenteditable="true">${t.subject}</td>`;
+					const actions = document.createElement('td');
+					const del = document.createElement('button'); del.className='btn'; del.textContent='Delete'; del.onclick=()=>{ const i = EduData.teachers.indexOf(t); if(i>-1){ EduData.teachers.splice(i,1); renderTeachers(); EduVerse.showToast('Deleted (simulated)','danger'); } };
+					actions.appendChild(del); tr.appendChild(actions); tBody.appendChild(tr);
+				}
+			}
+			document.getElementById('addStudentBtn').onclick = () => { EduData.students.push({ id: Date.now(), name: 'New Student', class: 'CSE-3B', attendance: 0, grade: 'N' }); renderStudents(); EduVerse.showToast('Added (simulated)','success'); };
+			document.getElementById('addTeacherBtn').onclick = () => { EduData.teachers.push({ id: Date.now(), name: 'New Teacher', subject: 'Subject', department: 'Department' }); renderTeachers(); EduVerse.showToast('Added (simulated)','success'); };
+			renderStudents();
+			renderTeachers();
+		}
+
+		// Teacher performance tracker (simple editable grades table)
+		function initTeacherPerf(){
+			const wrap = document.getElementById('teacherPerf');
+			if((user && user.role)!=='Teacher'){ wrap.style.display='none'; return; }
+			wrap.style.display='block';
+			const tbody = document.getElementById('perfTable');
+			tbody.innerHTML = '';
+			const myCourses = EduData.courses.filter(c=>c.teacherId===user.id);
+			const course = myCourses[0];
+			for(const s of EduData.students){
+				const tr = document.createElement('tr');
+				const grade = document.createElement('input'); grade.type='text'; grade.value = s.grade;
+				tr.appendChild(Object.assign(document.createElement('td'),{textContent:s.name}));
+				tr.appendChild(Object.assign(document.createElement('td'),{textContent:course?course.code:'-'}));
+				const tdg = document.createElement('td'); tdg.appendChild(grade); tr.appendChild(tdg); tbody.appendChild(tr);
+			}
+			document.getElementById('savePerf').onclick = ()=> EduVerse.showToast('Grades saved (simulated)','success');
+		}
+
+		const role = (user && user.role) || 'Student';
+		roleTitle.textContent = role;
+		buildMenu(role);
+		renderCoursesForRole(role);
+		initAdminMgmt();
+		initTeacherPerf();
+	</script>
+</body>
+</html>
+
